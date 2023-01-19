@@ -1,16 +1,13 @@
-from http.client import HTTPException
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from uvicorn import run
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-# from src.route.all_routes import router as all_routes
+sold_epc = ["30361fac68253e4000000024", "30361f6ad811bcc000000001"]
+unsold_epc = ["30361f56b40141c000000001", "30361fac682d3340000000f8"]
 
-app = FastAPI(
-    title="Eas Alarm_Count",
 
-)
+app = FastAPI(title="Eas Alarm_Count",)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,33 +19,24 @@ app.add_middleware(
 )
 
 
-# app.include_router(all_routes)
-
-
 @app.get("/eas/alarm/{epc}", tags=["EAS Alarm"])
-def get_alarm_count(
-        epc: str
-
-):
+def get_alarm_count(epc: str):
     try:
-        logger.debug(epc)
-        if epc == '0000000000000000000001e1':
-            raise HTTPException(status_code=400, detail=f'epc is not valid {epc}')
-        return epc
-
+        if epc in sold_epc:
+            logger.debug(f'EPC is sold {epc}')
+            raise HTTPException(status_code=400)
+        elif epc in unsold_epc:
+            logger.info(f'EPC is un-sold {epc}', detail=f'epc is Sold')
+            raise HTTPException(status_code=200, detail=f'epc is un-sold')
+        else:
+            logger.critical(f'EPC is un-sold/other {epc}')
+            raise HTTPException(status_code=200, detail=f'epc is un-sold')
     except HTTPException as e:
-        logger.debug(f'{e}')
         raise e
     except Exception as e:
         logger.debug(f'{e}')
-        raise HTTPException(status_code=500, detail=f'{e}')
+        raise HTTPException(status_code=500, detail=f'Error in get_epc: {e}')
 
-    # @app.on_event("startup")
-
-
-# async def init_processes():
-#     start_new_thread(stock_take_processing_thread, ())
-#     pass
 
 if __name__ == '__main__':
     logger.info("Started main")
